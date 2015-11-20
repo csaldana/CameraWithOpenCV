@@ -1,6 +1,10 @@
 package com.example.camera2;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.ListIterator;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -16,21 +20,31 @@ import org.opencv.imgproc.Imgproc;
 import android.app.Activity;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
+import android.hardware.Camera.Size;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SubMenu;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 public class Camara_principal extends Activity implements CvCameraViewListener2{
 	
 	private CameraBridgeViewBase mCameraView;
 	private Boolean tomarFoto;
+	
 	private Mat imagenOpenCV;
 	private boolean camaraFrontal;
-	private final int NUMERO_CAMARA=1;
+	private boolean cambiarCamera, cambiarColor, bandera;
+	private  int NUMERO_CAMARA=0;
+	//resolucion de la camara
+
+	
+	
+	
 	
     @SuppressWarnings("unused")
 	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -46,7 +60,7 @@ public class Camara_principal extends Activity implements CvCameraViewListener2{
             
         }
     };
-	
+	               
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -55,16 +69,54 @@ public class Camara_principal extends Activity implements CvCameraViewListener2{
 		
 		final Window window = getWindow();
 		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		
 		tomarFoto=false;
+		cambiarCamera = false;
+		cambiarColor = false;
+		bandera = false;
+		
 		CameraInfo cameraInfo=new CameraInfo();
 		Camera.getCameraInfo(NUMERO_CAMARA, cameraInfo);
-		camaraFrontal= cameraInfo.facing == CameraInfo.CAMERA_FACING_BACK;
+		camaraFrontal= cameraInfo.facing == CameraInfo.CAMERA_FACING_FRONT;
 		mCameraView=new JavaCameraView (this, NUMERO_CAMARA);
+		mCameraView.setCameraIndex(NUMERO_CAMARA); //Tomar id de la camara
 		mCameraView.setCvCameraViewListener(this);
-		
 		setContentView(mCameraView);
 	}
 	
+	public void camaras(){
+		
+		if(cambiarCamera == false){
+			cambiarCamera = true;
+			NUMERO_CAMARA = 1;
+			
+			CameraInfo cameraInfo = new CameraInfo();
+			Camera.getCameraInfo(NUMERO_CAMARA, cameraInfo);
+			camaraFrontal= cameraInfo.facing == CameraInfo.CAMERA_FACING_FRONT;
+			//mCameraView=new JavaCameraView (this, NUMERO_CAMARA);
+			mCameraView.setCameraIndex(NUMERO_CAMARA); //Cambiar id de la camara
+			setContentView(mCameraView);
+			
+			Toast.makeText(getApplicationContext(), "Estoy en camara frontal",Toast.LENGTH_LONG).show();
+		}
+		else{
+			
+			cambiarCamera = false;
+			NUMERO_CAMARA = 0;
+			CameraInfo cameraInfo = new CameraInfo();
+			Camera.getCameraInfo(NUMERO_CAMARA, cameraInfo);
+			camaraFrontal= cameraInfo.facing == CameraInfo.CAMERA_FACING_BACK;
+			//mCameraView=new JavaCameraView (this, NUMERO_CAMARA);
+			mCameraView.setCameraIndex(NUMERO_CAMARA); // Cambiar id de la camara
+			setContentView(mCameraView);
+			
+			Toast.makeText(getApplicationContext(), "Estoy en camara trasera",Toast.LENGTH_LONG).show();
+				
+			}
+			
+	}
+
+
     @Override
     public void onPause()
     {
@@ -85,11 +137,14 @@ public class Camara_principal extends Activity implements CvCameraViewListener2{
         if (mCameraView != null)
         	mCameraView.disableView();
     }
-
+    
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.camara_principal, menu);
+		
+		
+		
 		return true;
 	}
 
@@ -99,54 +154,104 @@ public class Camara_principal extends Activity implements CvCameraViewListener2{
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
-		if (id == R.id.action_settings) {
+		switch(id){
+		case  R.id.action_settings:
 			return true;
+		case R.id.tomar_foto:
+			tomarFoto = true;
+		break;
+		case R.id.cambiarCamera:
+			camaras();
+		break;
+		case R.id.cambiarColor:
+			cambiarColor = bandera;
+		break;
+		case R.id.cambiarResolucion:
+
+		break;
+			
 		}
-		return super.onOptionsItemSelected(item);
+		return true;//super.onOptionsItemSelected(item);
 	}
 
 	@Override
 	public void onCameraViewStarted(int width, int height) {
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void onCameraViewStopped() {
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
 		final Mat rgba=inputFrame.rgba();
 		final Mat imagenGris=new Mat();
-		if(tomarFoto)
-		{
-			tomarFoto(rgba);
-			tomarFoto=false;
-			
+		
+		if(cambiarColor == false){//Imagen a color
+			bandera = true;
+			if(tomarFoto == true){
+				tomarFoto(rgba);
+				tomarFoto=false;
+				return rgba;
+			}
+		
+			Imgproc.cvtColor(rgba, imagenGris, Imgproc.COLOR_RGBA2RGB);
 			return rgba;
 		}
-		Imgproc.cvtColor(rgba, imagenGris, Imgproc.COLOR_RGBA2GRAY);
-		return imagenGris;
+		else{// Imagen a gris
+			
+			bandera = false;
+			if(tomarFoto == true){
+				tomarFotoGris(rgba);
+				tomarFoto=false;
+				return rgba;
+			}
+			Imgproc.cvtColor(rgba, imagenGris,Imgproc.COLOR_RGB2GRAY);
+			return imagenGris;
+			
+		}
+		
 	}
 
 
-private void tomarFoto(final Mat rgba){
-	final String ruta=Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString()
-			+File.separator+"Camara";
-	File rutaImagen=new File(ruta);
-	 
-	if(!rutaImagen.isDirectory() && !rutaImagen.mkdirs()){
-		Log.e("Camara", "Archivo no valido");
-		return;
+	private void tomarFoto( final Mat rgba ){
+		
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+        String dateTimePicture = sdf.format(new Date());
+        String fileName = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
+		File rutaImagen=new File(fileName);
+		 
+		if(!rutaImagen.isDirectory() && !rutaImagen.mkdirs()){
+			Log.e("Camara", "Archivo no valido");
+			return;
+		}
+		Imgproc.cvtColor(rgba, imagenOpenCV, Imgproc.COLOR_RGBA2BGR,3);
+		if(!Imgcodecs.imwrite(fileName+File.separator+"imagen"+ dateTimePicture +".bmp", imagenOpenCV)){
+			Log.e("Camara", "Error al convertir imagen");
+			return;
+		}
+		Log.v("com.example.camara", "Imagen guardada con exito");		
 	}
-	Imgproc.cvtColor(rgba, imagenOpenCV, Imgproc.COLOR_RGBA2BGR,3);
-	if(!Imgcodecs.imwrite(ruta+File.separator+"imagen.bmp", imagenOpenCV)){
-		Log.e("Camara", "Error al convertir imagen");
-		return;
+	
+	private void tomarFotoGris( final Mat imagenGris ){
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+        String dateTimePicture = sdf.format(new Date());
+        String ruta = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
+		File rutaImagen=new File(ruta);
+		 
+		if(!rutaImagen.isDirectory() && !rutaImagen.mkdirs()){
+			Log.e("Camara", "Archivo no valido");
+			return;
+		}
+		Imgproc.cvtColor(imagenGris, imagenOpenCV, Imgproc.COLOR_RGB2GRAY,3);
+		if(!Imgcodecs.imwrite(ruta+File.separator+"imagen"+ dateTimePicture + ".bmp", imagenOpenCV)){
+			Log.e("Camara", "Error al convertir imagen");
+			return;
+		}
+		Log.v("com.example.camara", "Imagen guardada con exito");		
 	}
-	Log.v("com.example.camara", "Imagen guardada con exito");		
-}
-}
+	
+	}

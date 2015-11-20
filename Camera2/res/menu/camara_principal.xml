@@ -7,5 +7,30 @@
         android:orderInCategory="100"
         android:showAsAction="never"
         android:title="@string/action_settings"/>
+    
+    <item 
+        android:id="@+id/tomar_foto"
+        android:showAsAction="never"
+        android:title="@string/menu_take_photo"></item>
+    
+     <item 
+        android:id="@+id/cambiarCamera"
+        android:showAsAction="never"
+        android:title="@string/changeCamera"></item>
+     
+     <item 
+        android:id="@+id/cambiarColor"
+        android:showAsAction="never"
+        android:title="@string/changeColor"></item>
+     
+    <item 
+        android:id="@+id/cambiarResolucion"
+        android:showAsAction="never"
+        android:title="@string/changeResolution"></item>
+    
+        <item 
+        android:id="@+id/cambiarEfecto"
+        android:showAsAction="never"
+        android:title="@string/changeEfect"></item>
 
 </menu>
